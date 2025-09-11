@@ -1,3 +1,40 @@
+/* ---- Turn count section ------------------------------------------------ */
+.turn-count-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.turn-count-section label:first-child {
+  flex: 1;
+}
+
+.turn-count-section input[type="number"]:disabled {
+  background-color: var(--surface-alt);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.checkbox-label:hover {
+  color: var(--accent);
+}
+
 /* ---- Commander sections ------------------------------------------------ */
 .commanders-section {
   margin: 1rem 0;

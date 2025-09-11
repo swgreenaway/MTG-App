@@ -6,10 +6,35 @@ import { createGameWithPlayers } from '../services/gameService.mjs';
 export async function createGame(req, res) {
   const { date, turns, wincon, winner, players } = req.body;
   const num_players = players.length;
-  if (!date || !Number.isInteger(turns) || !wincon || !Array.isArray(players) || players.length < 2) {
-    console.log(!date, !Number.isInteger(turns), !wincon, !Array.isArray(players), players.length < 2);
-    return res.status(400).json({ error: 'Invalid payload' });
+  
+  // Basic validation
+  if (!date || (turns !== null && !Number.isInteger(turns)) || !wincon || !Array.isArray(players) || players.length < 2) {
+    console.log('Basic validation failed:', {
+      noDate: !date,
+      invalidTurns: (turns !== null && !Number.isInteger(turns)),
+      noWincon: !wincon,
+      notArray: !Array.isArray(players),
+      tooFewPlayers: players.length < 2
+    });
+    return res.status(400).json({ error: 'Invalid payload: missing required fields or invalid data types' });
   }
+  
+  // Validate each player has required fields
+  for (let i = 0; i < players.length; i++) {
+    const player = players[i];
+    if (!player.name || typeof player.name !== 'string' || player.name.trim().length === 0) {
+      return res.status(400).json({ 
+        error: `Invalid player at index ${i}: missing or empty name` 
+      });
+    }
+    if (!Number.isInteger(player.turnOrder) || player.turnOrder < 1) {
+      return res.status(400).json({ 
+        error: `Invalid player at index ${i}: turnOrder must be a positive integer` 
+      });
+    }
+  }
+  
+  console.log('Creating game with players:', players.map(p => ({ name: p.name, turnOrder: p.turnOrder })));
 
   const commanderNames = players.flatMap(p => {
     if (p.commanders) {

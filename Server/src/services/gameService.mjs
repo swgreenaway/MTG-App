@@ -14,32 +14,55 @@ export async function createGameWithPlayers(client, payload) {
   let winnerId = null;
   
   for (const p of players) {
-    const playerName = p.name.trim();
+    const playerName = p.name?.trim();
     const commanders = p.commanders || (p.commander ? [{ name: p.commander.trim(), isPrimary: true }] : []);
     const turnOrder = p.turnOrder;
     
+    // Validate player name
+    if (!playerName || playerName.length === 0) {
+      throw new Error(`Invalid player name: "${p.name}"`);
+    }
+    
     // Get or create player
     let playerId;
-    const existingPlayer = await client.query(
-      'SELECT player_id FROM player WHERE player_name = $1',
-      [playerName]
-    );
-    
-    if (existingPlayer.rows.length > 0) {
-      playerId = existingPlayer.rows[0].player_id;
-    } else {
-      const newPlayer = await client.query(
-        'INSERT INTO player (player_name) VALUES ($1) RETURNING player_id',
+    try {
+      const existingPlayer = await client.query(
+        'SELECT player_id FROM player WHERE player_name = $1',
         [playerName]
       );
-      playerId = newPlayer.rows[0].player_id;
+      
+      if (existingPlayer.rows.length > 0) {
+        playerId = existingPlayer.rows[0].player_id;
+        console.log(`Found existing player: ${playerName} with ID: ${playerId}`);
+      } else {
+        const newPlayer = await client.query(
+          'INSERT INTO player (player_name) VALUES ($1) RETURNING player_id',
+          [playerName]
+        );
+        playerId = newPlayer.rows[0].player_id;
+        console.log(`Created new player: ${playerName} with ID: ${playerId}`);
+      }
+    } catch (error) {
+      console.error(`Error handling player ${playerName}:`, error);
+      throw error;
+    }
+    
+    // Validate player ID was obtained
+    if (!playerId) {
+      throw new Error(`Failed to get player_id for player: ${playerName}`);
     }
     
     // Add player to game
-    await client.query(
-      'INSERT INTO player_game (game_id, player_id, turn_order) VALUES ($1, $2, $3)',
-      [gameId, playerId, turnOrder]
-    );
+    try {
+      await client.query(
+        'INSERT INTO player_game (game_id, player_id, turn_order) VALUES ($1, $2, $3)',
+        [gameId, playerId, turnOrder]
+      );
+      console.log(`Added player ${playerName} (ID: ${playerId}) to game ${gameId} with turn order ${turnOrder}`);
+    } catch (error) {
+      console.error(`Error adding player ${playerName} to game:`, error);
+      throw error;
+    }
     
     playerRows.push({ player_id: playerId, player_name: playerName });
     

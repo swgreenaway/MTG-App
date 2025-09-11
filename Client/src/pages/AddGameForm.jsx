@@ -9,6 +9,7 @@ export default function AddGameForm(){
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [formData, setFormData] = useState(null);
+    const [turnCountNotRecorded, setTurnCountNotRecorded] = useState(false);
     const nextId = useRef(1);
     const formRef = useRef(null);    
     
@@ -71,7 +72,7 @@ export default function AddGameForm(){
 
         const payload = {
             date: form.get('date'),
-            turns: (!turnsValue || turnsNumber < 0) ? null : turnsNumber,
+            turns: turnCountNotRecorded ? null : ((!turnsValue || turnsNumber < 0) ? null : turnsNumber),
             wincon: form.get('wincon'),
             winner: form.get('winner'),
             players: players.map(p => ({
@@ -106,6 +107,7 @@ export default function AddGameForm(){
                 formRef.current.reset();
                 setPlayers([]);
                 setFormData(null);
+                setTurnCountNotRecorded(false);
                 
                 // Hide success message after 3 seconds
                 setTimeout(() => setShowSuccess(false), 3000);
@@ -156,10 +158,26 @@ export default function AddGameForm(){
         <input type="date" name="date" />
       </label>
 
-      <label>
-        Turn Count:
-        <input type="number" name="turns" min="0" />
-      </label>
+      <div className="turn-count-section">
+        <label>
+          Turn Count:
+          <input 
+            type="number" 
+            name="turns" 
+            min="0" 
+            disabled={turnCountNotRecorded}
+            placeholder={turnCountNotRecorded ? "Not recorded" : "Enter turn count"}
+          />
+        </label>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={turnCountNotRecorded}
+            onChange={(e) => setTurnCountNotRecorded(e.target.checked)}
+          />
+          Turn count not recorded
+        </label>
+      </div>
 
       <label>
         Win Con:

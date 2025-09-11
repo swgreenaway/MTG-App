@@ -7,7 +7,7 @@ CREATE TABLE game (
   id         SERIAL PRIMARY KEY,
   date       DATE    NOT NULL,
   winner_id  INTEGER NULL,       -- FK to player
-  turns      INTEGER NOT NULL,
+  turns      INTEGER NULL,       -- Can be null if not recorded
   wincon     TEXT    NULL
 );
 
