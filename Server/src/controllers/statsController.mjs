@@ -341,6 +341,20 @@ export async function getTotalGamesCount(req, res) {
   }
 }
 
+export async function getUniquePlayerCount(req, res) {
+  try {
+    const result = await pool.query(`
+      SELECT COUNT(DISTINCT player_id) as unique_players
+      FROM player
+    `);
+    
+    res.json({ unique_players: parseInt(result.rows[0].unique_players) });
+  } catch (err) {
+    console.error('Query error', err);
+    res.status(500).json({ error: 'Query failed' });
+  }
+}
+
 export async function getAverageGameLength(req, res) {
   try {
     const result = await pool.query(`

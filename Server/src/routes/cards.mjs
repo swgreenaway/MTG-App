@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { getCardDetails } from '../controllers/cardsController.mjs';
+import { getCardDetails, searchCommanderSuggestions } from '../controllers/cardsController.mjs';
 
 const router = Router();
 
 router.get('/details/:name', getCardDetails);
+router.get('/search/commanders', searchCommanderSuggestions);
 
 export default router;

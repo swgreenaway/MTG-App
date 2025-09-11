@@ -7,7 +7,7 @@ import './Home.css';
 export default function Home() {
   const [stats, setStats] = useState({
     totalGames: 0,
-    activePlayers: 0,
+    uniquePlayers: 0,
     avgGameLength: 0,
     uniqueCommanders: 0
   });
@@ -42,9 +42,13 @@ export default function Home() {
         const avgGameLengthResponse = await fetch('/api/v1/stats/avg-game-length');
         const avgGameLengthData = await avgGameLengthResponse.json();
 
+        // Fetch unique player count
+        const uniquePlayersResponse = await fetch('/api/v1/stats/unique-players');
+        const uniquePlayersData = await uniquePlayersResponse.json();
+
         setStats({
           totalGames: totalGamesData?.total_games || 0,
-          activePlayers: playersData?.length || 0,
+          uniquePlayers: uniquePlayersData?.unique_players || 0,
           avgGameLength: avgGameLengthData?.avg_turns || 0,
           uniqueCommanders: commandersData?.length || 0
         });
@@ -100,9 +104,9 @@ export default function Home() {
           <p className="stat-sublabel">recorded</p>
         </div>
         <div className="stat-card">
-          <h3 className="stat-number">{stats.activePlayers}</h3>
-          <p className="stat-label">Active Players</p>
-          <p className="stat-sublabel">with recorded games</p>
+          <h3 className="stat-number">{stats.uniquePlayers}</h3>
+          <p className="stat-label">Unique Players</p>
+          <p className="stat-sublabel">in database</p>
         </div>
         <div className="stat-card">
           <h3 className="stat-number">{stats.avgGameLength}</h3>

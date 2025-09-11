@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMostPlayed, commanderWinRate, playerWinRate, getColorFreq, getGameFeed, getHeadToHead, getTotalGamesCount, getAverageGameLength } from '../controllers/statsController.mjs';
+import { getMostPlayed, commanderWinRate, playerWinRate, getColorFreq, getGameFeed, getHeadToHead, getTotalGamesCount, getUniquePlayerCount, getAverageGameLength } from '../controllers/statsController.mjs';
 
 const router = Router();
 
@@ -20,6 +20,8 @@ router.get('/game-feed/:name', getGameFeed);
 router.get('/players/head-to-head/:name', getHeadToHead);
 
 router.get('/total-games', getTotalGamesCount);
+
+router.get('/unique-players', getUniquePlayerCount);
 
 router.get('/avg-game-length', getAverageGameLength);
 
