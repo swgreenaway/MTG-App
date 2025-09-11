@@ -7,7 +7,7 @@ import './Home.css';
 export default function Home() {
   const [stats, setStats] = useState({
     totalGames: 0,
-    activePlayers: 0,
+    uniquePlayers: 0,
     avgGameLength: 0,
     uniqueCommanders: 0
   });
@@ -48,7 +48,7 @@ export default function Home() {
 
         setStats({
           totalGames: totalGamesData?.total_games || 0,
-          activePlayers: uniquePlayersData?.unique_players || 0,
+          uniquePlayers: uniquePlayersData?.unique_players || 0,
           avgGameLength: avgGameLengthData?.avg_turns || 0,
           uniqueCommanders: commandersData?.length || 0
         });
@@ -104,7 +104,7 @@ export default function Home() {
           <p className="stat-sublabel">recorded</p>
         </div>
         <div className="stat-card">
-          <h3 className="stat-number">{stats.activePlayers}</h3>
+          <h3 className="stat-number">{stats.uniquePlayers}</h3>
           <p className="stat-label">Unique Players</p>
           <p className="stat-sublabel">in database</p>
         </div>
