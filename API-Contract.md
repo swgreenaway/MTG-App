@@ -18,12 +18,14 @@ This contract documents the public endpoints exposed by the **MTG‑App** server
 | /stats/commanders/win-rate/:name | GET | Win rates for commanders used by specific player |
 | /stats/players/win-rate | GET | Win rates per player |
 | /stats/players/win-rate/:name | GET | Win rates for specific player by name |
-| /stats/colors/frequency | GET | Color identity frequency across commanders |
-| /stats/colors/frequency/:name | GET | Color identity frequency for specific player |
+| /stats/colors/frequency | GET | Color seat share percentage across all games |
+| /stats/colors/frequency/:name | GET | Color seat share percentage for specific player |
 | /stats/game-feed | GET | Recent games feed with participant details |
 | /stats/game-feed/:name | GET | Recent games feed for specific player |
 | /stats/players/head-to-head/:name | GET | Head-to-head statistics for player vs all opponents |
 | /stats/players/head-to-head/:name?vs=player2 | GET | Head-to-head statistics between two specific players |
+| /stats/total-games | GET | Total number of games recorded |
+| /stats/avg-game-length | GET | Average game length in turns across all games |
 | /cards/details/:name | GET | Card details from Scryfall API |
 
 ## POST /api/v1/games – Create a game
@@ -155,39 +157,84 @@ Each result contains:
 
 ## GET /api/v1/stats/colors/frequency
 
-Returns the frequency of each color identity. Can be called in two ways:
+Returns the seat share percentage for each color identity. Can be called in two ways:
 
-- **All commanders** (GET /api/v1/stats/colors/frequency): Returns color frequency across all commanders in the database.
-- **Player's commanders** (GET /api/v1/stats/colors/frequency/:name): Returns color frequency for commanders used by a specific player.
+- **All games** (GET /api/v1/stats/colors/frequency): Returns color seat share across all games (global seat share per game).
+- **Player's games** (GET /api/v1/stats/colors/frequency/:name): Returns color presence percentage for a specific player's games.
 
 The colors follow Magic: the Gathering color codes W, U, B, R, G. Each result has:
 - color: the color letter (W, U, B, R, G)
-- freq: number of occurrences of that color in commander color identities
+- share: decimal representation of seat share (0.0 - 1.0)
+- pct: percentage representation (0.0 - 100.0)
+- total_games: number of games analyzed
+- avg_players_per_game: average number of players per game (null for player-specific queries)
 
 ### Examples
 
-**All commanders:**
+**Global seat share (all games):**
 ```json
 [
-  { "color": "W", "freq": 12 },
-  { "color": "U", "freq": 8 },
-  { "color": "B", "freq": 7 },
-  { "color": "R", "freq": 5 },
-  { "color": "G", "freq": 9 }
+  { "color": "W", "share": 0.324, "pct": 32.40, "total_games": 45, "avg_players_per_game": 3.8 },
+  { "color": "U", "share": 0.287, "pct": 28.70, "total_games": 45, "avg_players_per_game": 3.8 },
+  { "color": "B", "share": 0.203, "pct": 20.30, "total_games": 45, "avg_players_per_game": 3.8 },
+  { "color": "R", "share": 0.156, "pct": 15.60, "total_games": 45, "avg_players_per_game": 3.8 },
+  { "color": "G", "share": 0.298, "pct": 29.80, "total_games": 45, "avg_players_per_game": 3.8 }
 ]
 ```
 
-**Player's commanders:**
+**Player's color presence:**
 ```json
 [
-  { "color": "W", "freq": 3 },
-  { "color": "B", "freq": 2 },
-  { "color": "G", "freq": 1 }
+  { "color": "W", "share": 0.667, "pct": 66.67, "total_games": 12, "avg_players_per_game": null },
+  { "color": "U", "share": 0.0, "pct": 0.0, "total_games": 12, "avg_players_per_game": null },
+  { "color": "B", "share": 0.333, "pct": 33.33, "total_games": 12, "avg_players_per_game": null },
+  { "color": "R", "share": 0.0, "pct": 0.0, "total_games": 12, "avg_players_per_game": null },
+  { "color": "G", "share": 0.250, "pct": 25.0, "total_games": 12, "avg_players_per_game": null }
 ]
 ```
 
 **Errors:**
-- 404 Not Found: Player not found (when using :name parameter)
+- 404 Not Found: Player not found or no games for this player (when using :name parameter)
+- 500 Internal Server Error: Query failure
+
+## GET /api/v1/stats/total-games
+
+Returns the total number of games recorded in the database.
+
+### Response
+
+Returns a simple JSON object with the total count:
+
+```json
+{
+  "total_games": 156
+}
+```
+
+**Errors:**
+- 500 Internal Server Error: Query failure
+
+## GET /api/v1/stats/avg-game-length
+
+Returns the average game length in turns across all games in the database. Only includes games with turn counts greater than 0.
+
+### Response
+
+Returns detailed statistics about game length:
+
+```json
+{
+  "avg_turns": 8.7,
+  "games_with_turns": 142,
+  "total_games": 156
+}
+```
+
+- **avg_turns**: Average number of turns per game (rounded to 1 decimal place)
+- **games_with_turns**: Number of games that have turn data (turns > 0)
+- **total_games**: Total number of games in the database
+
+**Errors:**
 - 500 Internal Server Error: Query failure
 
 ## GET /api/v1/stats/game-feed

@@ -24,59 +24,81 @@ Use the PowerShell script `dev.ps1` to start all services:
 - **Standard**: `./dev.ps1` (starts Docker, API server, and Vite dev server)
 - **With PSQL**: `./dev.ps1 -WithPsql` (also opens PostgreSQL shell)
 
+## Database Schema Architecture
+
+The application uses a normalized PostgreSQL schema designed to track Magic: The Gathering multiplayer games:
+
+### Core Tables
+- **`game`**: Game sessions with winner tracking, turns, and win conditions
+- **`player`**: Catalog of unique players across all games
+- **`player_game`**: Junction table linking players to specific games with turn order
+- **`commander`**: Commander card catalog populated via Scryfall API
+- **`commander_color`**: Normalized color identity storage (W, U, B, R, G, C)
+- **`player_game_commander`**: Maps commanders to game seats (supports partners/backgrounds)
+
+### Key Schema Features
+- Supports multiple commanders per player (partners, backgrounds, companions)
+- Normalized color identity for efficient querying
+- Referential integrity with cascade/restrict policies
+- Optimized indexes for common query patterns
+
+Full schema definition available in `Server/schema.md`.
+
 ## Architecture Overview
 
 ### Client Architecture (React)
-- **Framework**: React 19 with Vite build system
-- **Routing**: React Router DOM for SPA navigation
-- **State Management**: Context API via `GameMetaProvider` for game metadata
-- **Styling**: CSS modules with component-specific stylesheets
+- **Framework**: React 19 with Vite build system and SWC compiler
+- **Routing**: React Router DOM v7 for SPA navigation  
+- **State Management**: Context API via `GameMetaProvider` for cross-component game metadata
+- **Styling**: CSS modules with component-specific stylesheets co-located with components
 - **Pages**: Hero (landing), AddGameForm, Metrics, PlayerPage, GameFeedPage
-- **Components**: Modular components in `/components` directory with CSS co-location
+- **Data Flow**: Context provider fetches player/commander/color statistics on mount and shares across app
 
 ### Server Architecture (Express.js)
-- **Framework**: Express.js with ES modules (.mjs)
-- **Database**: PostgreSQL with connection pooling
-- **API Structure**: RESTful API at `/api/v1` base path
-- **Routing**: Modular routers (games, stats, cards)
-- **Services**: Business logic separated into service layer
-- **Controllers**: Request handling and response formatting
-- **Database Layer**: Pool connections with transaction support (`pool.mjs`, `tx.mjs`)
+- **Framework**: Express.js v5 with ES modules (.mjs extensions throughout)
+- **Database**: PostgreSQL with `pg` connection pooling via `pool.mjs`
+- **API Structure**: RESTful API at `/api/v1` base path, fully documented in `API-Contract.md`
+- **Layered Architecture**: 
+  - Routes (`routes/`) → Controllers (`controllers/`) → Services (`services/`) → Database
+  - Transaction support via `tx.mjs` for complex operations
+- **External Integration**: Scryfall API integration for Magic card data
 
-### Key Service Integrations
-- **Scryfall API**: Magic card data integration via `scryfallService.mjs`
-- **Commander Service**: Card validation and commander data management
-- **Game Service**: Game creation, player tracking, and winner assignment
+### Service Layer Details
+- **`gameService.mjs`**: Game creation, player management, winner assignment
+- **`commanderService.mjs`**: Commander validation and database management
+- **`scryfallService.mjs`**: Magic card data fetching and caching from Scryfall API
 
-### Database Schema
-The application tracks Magic: The Gathering games with:
-- Games table (date, turns, win condition, winner info)
-- Players table (names, commanders, turn order)
-- Commanders table (populated via Scryfall API)
+### API Design Patterns
+All statistics endpoints support dual access patterns:
+- Collection queries: `/stats/players/win-rate` (all players)
+- Specific queries: `/stats/players/win-rate/:name` (single player)
 
-### API Contract
-RESTful API documented in `API-Contract.md`:
-- `POST /api/v1/games` - Create new game records
-- `GET /api/v1/stats/*` - Various statistics endpoints (players, commanders, colors)
-- Commander and player statistics with optional filtering by name
+Critical endpoints handle complex aggregations:
+- Head-to-head matchup statistics with game history
+- Color identity frequency analysis
+- Recent game feeds with full participant details
+
+Reference API-Contract.md for detailed route information.
 
 ## Development Notes
 
-### Client Dependencies
-- React 19 with React Router DOM for navigation
-- Vite for development server and building
-- ESLint for code linting
+### Database Development
+- Schema changes require updating both `Server/schema.md` and migration scripts
+- All controllers updated to use new normalized schema (as of recent schema migration)
+- Statistics queries leverage PostgreSQL window functions and CTEs for complex aggregations
 
-### Server Dependencies  
-- Express.js for HTTP server
-- pg (node-postgres) for PostgreSQL connectivity
-- ES modules throughout (.mjs extensions)
+### Client-Server Integration
+- Client uses `GameMetaProvider` context to cache statistics on app startup
+- API calls expect specific JSON formats documented in `API-Contract.md`
+- Error handling follows consistent 400/404/500 HTTP status patterns
 
-### Directory Structure
-- `Client/` - React frontend application
-- `Server/` - Express.js backend API
-- `Server/src/controllers/` - Request handlers
-- `Server/src/services/` - Business logic
-- `Server/src/routes/` - Route definitions
-- `Server/src/db/` - Database connection and utilities
-- `Server/src/tests/` - Test files and utilities
+### File Structure Patterns
+- **Client**: Pages in `/src/pages/`, reusable components in `/src/components/` with co-located CSS
+- **Server**: Controllers handle HTTP concerns, services contain business logic, database layer handles data access
+- **Configuration**: Docker Compose manages PostgreSQL with health checks and admin interface
+
+### Technology Stack
+- **Frontend**: React 19, Vite 7, React Router DOM 7, ESLint 9
+- **Backend**: Express.js 5, node-postgres (pg) 8, ES modules
+- **Database**: PostgreSQL 16 with Docker containerization
+- **Development**: PowerShell automation script for multi-service startup
