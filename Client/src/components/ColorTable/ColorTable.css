@@ -1,3 +1,12 @@
+/* ---- Color subtitle ---------------------------------------------------- */
+.color-subtitle {
+  margin: -0.5rem 0 1rem 0;
+  color: var(--text-muted, #666);
+  font-size: 0.9rem;
+  text-align: center;
+  font-style: italic;
+}
+
 /* ---- Chart container --------------------------------------------------- */
 .chart {
   --pip-size: 22px;                 /* icon size */

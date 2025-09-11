@@ -12,26 +12,24 @@ export default function ColorTable({name}) {
       try {
         const res = await fetch(`/api/v1/stats/colors/frequency/${name ? name : ''}`);
 
-        const raw = await res.json(); // [{ color: 'W', freq: '12' }, ...]
+        const raw = await res.json(); // [{ color: 'W', share: 0.25, pct: 25.0, total_games: 10, avg_players_per_game: 3.5 }, ...]
         const byLetter = new Map();
 
         for (const row of Array.isArray(raw) ? raw : []) {
           const letter = String(row.color || '').toUpperCase();
           if (!WUBRG.includes(letter)) continue;
-          const count = Number(row.freq) || 0;
-          byLetter.set(letter, count);
+          const share = Number(row.share) || 0; // decimal share (0.0 - 1.0)
+          const pct = Number(row.pct) || 0;     // percentage (0 - 100)
+          byLetter.set(letter, { share, pct });
         }
 
-        const total = WUBRG.reduce((sum, l) => sum + (byLetter.get(l) || 0), 0);
-
         const normalized = WUBRG.map(l => {
-          const count = byLetter.get(l) || 0;
-          const percentage = total ? (count / total) * 100 : 0;
+          const data = byLetter.get(l) || { share: 0, pct: 0 };
           return {
             color_code: l,
             color_name: LETTER_TO_NAME[l],
-            count,
-            percentage,
+            share: data.share,
+            percentage: data.pct, // Use the pre-calculated percentage from API
             className: LETTER_TO_NAME[l].toLowerCase(), // "white", "blue", ...
           };
         });
@@ -54,7 +52,8 @@ export default function ColorTable({name}) {
 
   return (
     <section>
-      <h2>Color Frequency</h2>
+      <h2>Color Distribution</h2>
+      <p className="color-subtitle">Percentage of game seats by color identity</p>
       <ul className="chart">
         {colors.map((c) => (
           <li
@@ -64,7 +63,7 @@ export default function ColorTable({name}) {
           >
             <span className="bar" aria-hidden="true" />
             <span className="label">
-              {c.color_name}: <span className="count">{Math.round(c.percentage)}%</span>
+              {c.color_name}: <span className="count">{c.percentage}%</span>
             </span>
           </li>
         ))}

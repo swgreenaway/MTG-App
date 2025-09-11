@@ -34,24 +34,18 @@ export default function Home() {
         const commandersResponse = await fetch('/api/v1/stats/commanders/win-rate');
         const commandersData = await commandersResponse.json();
 
-        // Calculate average game length from recent games (excluding null/0 turn counts)
-        let avgTurns = 0;
-        if (gamesData && gamesData.length > 0) {
-          const gamesWithTurns = gamesData.filter(game => game.turns && game.turns > 0);
-          if (gamesWithTurns.length > 0) {
-            const totalTurns = gamesWithTurns.reduce((sum, game) => sum + game.turns, 0);
-            avgTurns = Math.round((totalTurns / gamesWithTurns.length) * 10) / 10; // Round to 1 decimal
-          }
-        }
+        // Fetch total games count
+        const totalGamesResponse = await fetch('/api/v1/stats/total-games');
+        const totalGamesData = await totalGamesResponse.json();
 
-        // Calculate total games from the game feed (this gives us the most recent games)
-        // Note: This is limited by the API's LIMIT, so it's not the true total
-        const totalGamesCount = gamesData?.length || 0;
+        // Fetch average game length from ALL games
+        const avgGameLengthResponse = await fetch('/api/v1/stats/avg-game-length');
+        const avgGameLengthData = await avgGameLengthResponse.json();
 
         setStats({
-          totalGames: totalGamesCount,
+          totalGames: totalGamesData?.total_games || 0,
           activePlayers: playersData?.length || 0,
-          avgGameLength: avgTurns || 0,
+          avgGameLength: avgGameLengthData?.avg_turns || 0,
           uniqueCommanders: commandersData?.length || 0
         });
 
@@ -94,9 +88,7 @@ export default function Home() {
         <h1>Welcome to MTG Tracker</h1>
         <p>Track your Commander games, analyze your meta, and discover new strategies</p>
         <div className="quick-actions">
-          <Link to="/AddGameForm" className="btn btn-primary">📝 Add New Game</Link>
-          <Link to="/Metrics" className="btn btn-secondary">📊 View All Stats</Link>
-          <Link to="/Metrics" className="btn btn-secondary">👥 Browse Players</Link>
+          <Link to="/AddGameForm" className="btn btn-primary">Add New Game</Link>
         </div>
       </section>
 
@@ -104,8 +96,8 @@ export default function Home() {
       <section className="stats-grid">
         <div className="stat-card">
           <h3 className="stat-number">{stats.totalGames}</h3>
-          <p className="stat-label">Recent Games</p>
-          <p className="stat-sublabel">last 20 shown</p>
+          <p className="stat-label">Total Games</p>
+          <p className="stat-sublabel">recorded</p>
         </div>
         <div className="stat-card">
           <h3 className="stat-number">{stats.activePlayers}</h3>
@@ -126,7 +118,6 @@ export default function Home() {
 
       {/* Commander Carousel - Full Width Row */}
       <section className="carousel-section">
-        <h2>🔥 Most Played Commanders (Last 30 Days)</h2>
         <Hero />
       </section>
 
