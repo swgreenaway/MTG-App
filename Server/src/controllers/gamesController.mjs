@@ -11,7 +11,12 @@ export async function createGame(req, res) {
     return res.status(400).json({ error: 'Invalid payload' });
   }
 
-  const commanderNames = players.map(p => p?.commander || '');
+  const commanderNames = players.flatMap(p => {
+    if (p.commanders) {
+      return p.commanders.map(c => c.name || '').filter(Boolean);
+    }
+    return p.commander ? [p.commander] : [];
+  });
   await ensureCommandersExist(commanderNames);
 
   const result = await withTransaction(pool, (client) =>

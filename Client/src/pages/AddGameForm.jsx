@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { useGameMeta } from '../contexts/GameMetaProvider';
+import CommanderAutocomplete from '../components/CommanderAutocomplete/CommanderAutocomplete';
 import './AddGameForm.css'
 
 export default function AddGameForm(){
-    const { playerNames, commanderNames } = useGameMeta();
+    const { playerNames } = useGameMeta();
     const [players, setPlayers] = useState([]); //for the players in the form
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -17,7 +18,7 @@ export default function AddGameForm(){
             {
                 id: nextId.current++,
                 name: "",
-                commander: "",
+                commanders: [{ name: "", isPrimary: true }],
                 turnOrder: ps.length + 1
             }
         ]);
@@ -34,6 +35,32 @@ export default function AddGameForm(){
     function update(id, field, value) {
         setPlayers(ps => ps.map(p => (p.id === id ? { ...p, [field]: value } : p)));
     }
+
+    function updateCommander(playerId, commanderIndex, field, value) {
+        setPlayers(ps => ps.map(p => {
+            if (p.id === playerId) {
+                const newCommanders = [...p.commanders];
+                newCommanders[commanderIndex] = { ...newCommanders[commanderIndex], [field]: value };
+                return { ...p, commanders: newCommanders };
+            }
+            return p;
+        }));
+    }
+
+    function togglePartner(playerId) {
+        setPlayers(ps => ps.map(p => {
+            if (p.id === playerId) {
+                if (p.commanders.length === 1) {
+                    // Add partner/background
+                    return { ...p, commanders: [...p.commanders, { name: "", isPrimary: false }] };
+                } else {
+                    // Remove partner/background (keep only primary)
+                    return { ...p, commanders: [p.commanders[0]] };
+                }
+            }
+            return p;
+        }));
+    }
     
     function handleSubmit(e){
         e.preventDefault();
@@ -47,10 +74,12 @@ export default function AddGameForm(){
             turns: (!turnsValue || turnsNumber < 0) ? null : turnsNumber,
             wincon: form.get('wincon'),
             winner: form.get('winner'),
-            num_players: players.length,
             players: players.map(p => ({
                 name: p.name.trim(),
-                commander: p.commander.trim(),
+                commanders: p.commanders.filter(c => c.name.trim()).map(c => ({
+                    name: c.name.trim(),
+                    isPrimary: c.isPrimary
+                })),
                 turnOrder: Number(p.turnOrder)
             }))
         }
@@ -121,9 +150,6 @@ export default function AddGameForm(){
         <datalist id="player-names">
           {playerNames.map(n => <option key={n} value={n} />)}
         </datalist>
-        <datalist id="commander-names">
-          {commanderNames.map(n => <option key={n} value={n} />)}
-        </datalist>
 
       <label>
         Game Date:
@@ -173,16 +199,28 @@ export default function AddGameForm(){
               />
             </label>
 
-            <label>
-              Commander:
-              <input
-                type="text"
-                name={`players[${i}].commander`}
-                value={p.commander}
-                onChange={e => update(p.id, "commander", e.target.value)}
-                list="commander-names"
-              />
-            </label>
+            <div className="commanders-section">
+              <h4>Commanders:</h4>
+              {p.commanders.map((commander, cmdIndex) => (
+                <div key={cmdIndex} className="commander-input">
+                  <label>
+                    {commander.isPrimary ? "Primary Commander:" : "Partner/Background:"}
+                    <CommanderAutocomplete
+                      value={commander.name}
+                      onChange={(value) => updateCommander(p.id, cmdIndex, "name", value)}
+                      placeholder={commander.isPrimary ? "Enter primary commander..." : "Enter partner/background..."}
+                    />
+                  </label>
+                </div>
+              ))}
+              <button 
+                type="button" 
+                onClick={() => togglePartner(p.id)}
+                className={p.commanders.length === 1 ? "add-commander-btn" : "remove-commander-btn"}
+              >
+                {p.commanders.length === 1 ? "+ Add Partner/Background" : "- Remove Partner/Background"}
+              </button>
+            </div>
 
             <label>
               Turn order:
