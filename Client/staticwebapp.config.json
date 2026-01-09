@@ -1,0 +1,8 @@
+{
+  "routes": [
+    {
+      "route": "/api/*",
+      "rewrite": "https://%FUNCTION_APP_URL%/api/{*path}"
+    }
+  ]
+}
