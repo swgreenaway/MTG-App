@@ -126,3 +126,15 @@ cd Server/scripts
 ```
 
 This migration allows games to be submitted without turn count information, which is useful when turn counts weren't tracked during gameplay.
+
+## Azure Functions Layout
+
+Function definitions live under `Server/src/functions/<functionName>/` and must include:
+- `function.json` for bindings and routing.
+- `index.mjs` as the handler entrypoint.
+
+The deployment build step (`npm run build`) stages the Azure Functions structure into the package root (`Server/`). It mirrors:
+- `src/functions/*` to `Server/<functionName>/`
+- `src/controllers`, `src/services`, and `src/db` to `Server/` so handlers can resolve their imports.
+
+If you add or rename a function, make sure it follows the folder layout above so the build step can stage it correctly.

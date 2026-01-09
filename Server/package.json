@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "node ./scripts/build-functions.mjs"
+  },
   "dependencies": {
     "pg": "^8.16.3"
   }
